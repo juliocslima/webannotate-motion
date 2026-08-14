@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Anotação temporal inteligente e privada de atividades humanas em vídeos, com sugestões automáticas e revisão humana.">
+  <title>WebAnnotate-Motion+</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">WebMedia 2026 · WFA</p>
+      <h1>WebAnnotate-Motion<span class="plus">+</span></h1>
+      <p class="subtitle">Anotação temporal inteligente, privada e human-in-the-loop para atividades humanas em vídeo.</p>
+    </div>
+    <div class="header-actions">
+      <button id="newProjectButton" class="button secondary">Novo projeto</button>
+      <button id="exportJsonButton" class="button secondary" disabled>Exportar JSON</button>
+      <button id="exportCsvButton" class="button secondary" disabled>Exportar CSV</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="privacy-banner" aria-label="Privacidade">
+      <div class="privacy-icon">✓</div>
+      <div>
+        <strong>Privacy by design</strong>
+        <span>O arquivo de vídeo é processado localmente no navegador. O servidor recebe somente metadados, anotações e decisões de revisão.</span>
+      </div>
+    </section>
+
+    <section class="panel project-panel">
+      <div class="section-heading">
+        <div>
+          <p class="step">1. Projeto</p>
+          <h2>Vídeo e metadados</h2>
+        </div>
+        <span id="saveStatus" class="status">Não salvo</span>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Nome do projeto
+          <input id="projectName" type="text" maxlength="120" value="Demonstração de atividades humanas">
+        </label>
+        <label>
+          Descrição
+          <input id="projectDescription" type="text" maxlength="1000" placeholder="Cenário, dataset ou objetivo da anotação">
+        </label>
+      </div>
+
+      <div class="video-source-row">
+        <label class="file-picker">
+          <span>Selecionar vídeo local</span>
+          <input id="videoFile" type="file" accept="video/mp4,video/webm,video/ogg">
+        </label>
+        <button id="loadSampleButton" class="button secondary">Usar vídeo sintético</button>
+        <span id="videoName" class="muted">Nenhum vídeo carregado</span>
+      </div>
+
+      <div class="video-shell">
+        <div class="video-stage">
+          <video id="video" controls preload="metadata"></video>
+          <canvas id="poseOverlay" class="pose-overlay" aria-hidden="true"></canvas>
+        </div>
+        <canvas id="analysisCanvas" width="96" height="54" hidden></canvas>
+      </div>
+
+      <div class="video-readout">
+        <span>Tempo: <strong id="currentTime">00:00.000</strong></span>
+        <span>Duração: <strong id="duration">00:00.000</strong></span>
+        <span>Atalhos: <kbd>I</kbd> início · <kbd>O</kbd> fim · <kbd>Espaço</kbd> reproduzir</span>
+      </div>
+    </section>
+
+    <section class="metrics-grid" aria-label="Métricas do projeto">
+      <article class="metric-card">
+        <span class="metric-label">Cobertura temporal</span>
+        <strong id="metricCoverage" class="metric-value">0%</strong>
+        <small id="metricAnnotatedSeconds">0,0 s anotados</small>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Sugestões pendentes</span>
+        <strong id="metricPending" class="metric-value">0</strong>
+        <small>aguardando revisão humana</small>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Taxa de aceitação</span>
+        <strong id="metricAcceptance" class="metric-value">—</strong>
+        <small>entre sugestões revisadas</small>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Confiança média</span>
+        <strong id="metricConfidence" class="metric-value">—</strong>
+        <small>das sugestões automáticas</small>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">F1 temporal</span>
+        <strong id="metricTemporalF1" class="metric-value">—</strong>
+        <small>última análise com referência manual</small>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">IoU temporal</span>
+        <strong id="metricTemporalIoU" class="metric-value">—</strong>
+        <small>sobreposição com referência manual</small>
+      </article>
+    </section>
+
+    <section class="panel annotation-panel">
+      <div class="section-heading">
+        <div>
+          <p class="step">2. Anotação</p>
+          <h2 id="annotationFormTitle">Criar segmento</h2>
+        </div>
+        <button id="cancelEditButton" class="button text" hidden>Cancelar edição</button>
+      </div>
+
+      <div class="annotation-controls">
+        <label>
+          Rótulo
+          <input id="labelInput" list="labelSuggestions" value="movimento" maxlength="80">
+          <datalist id="labelSuggestions">
+            <option value="movimento"></option>
+            <option value="repouso"></option>
+            <option value="caminhar"></option>
+            <option value="correr"></option>
+            <option value="levantar_mão"></option>
+            <option value="sentar"></option>
+            <option value="levantar"></option>
+            <option value="gesto"></option>
+          </datalist>
+        </label>
+        <label>
+          Início (s)
+          <input id="startTimeInput" type="number" min="0" step="0.001" value="0">
+        </label>
+        <button id="markStartButton" class="button secondary">Marcar início</button>
+        <label>
+          Fim (s)
+          <input id="endTimeInput" type="number" min="0" step="0.001" value="1">
+        </label>
+        <button id="markEndButton" class="button secondary">Marcar fim</button>
+        <button id="addAnnotationButton" class="button primary" disabled>Adicionar segmento</button>
+      </div>
+
+      <div class="timeline-card">
+        <div class="timeline-header">
+          <strong>Linha do tempo</strong>
+          <span id="annotationCount" class="muted">0 segmentos</span>
+        </div>
+        <div id="timeline" class="timeline" aria-label="Linha do tempo das anotações">
+          <div id="playhead" class="playhead"></div>
+          <div id="timelineEmpty" class="timeline-empty">As anotações aparecerão aqui.</div>
+        </div>
+      </div>
+      <div class="timeline-legend">
+        <span><i class="legend-box manual"></i> manual/aceita</span>
+        <span><i class="legend-box suggestion"></i> sugestão pendente</span>
+        <span><i class="legend-box rejected"></i> rejeitada</span>
+      </div>
+    </section>
+
+    <section class="panel analysis-panel">
+      <div class="section-heading">
+        <div>
+          <p class="step">3. Assistência automática</p>
+          <h2>Detectar intervalos por movimento ou pose</h2>
+        </div>
+        <span class="local-chip">Processamento local</span>
+      </div>
+      <p id="analysisDescription" class="muted measure">O baseline compara quadros reduzidos no navegador. A opção por pose usa landmarks corporais para estimar deslocamento relativo das articulações e segmentar a atividade.</p>
+      <div class="analysis-controls">
+        <label>
+          Analisador
+          <select id="analyzerMethodInput">
+            <option value="frame-difference">Diferença de quadros (baseline)</option>
+            <option value="pose" selected>Pose corporal (MediaPipe)</option>
+          </select>
+        </label>
+        <label>
+          Estratégia de limiar
+          <select id="thresholdModeInput">
+            <option value="adaptive" selected>Adaptativo (recomendado)</option>
+            <option value="manual">Manual</option>
+          </select>
+        </label>
+        <label id="manualThresholdLabel" class="is-disabled">
+          Limiar manual: <strong id="thresholdValue">0,040</strong>
+          <input id="thresholdInput" type="range" min="0.005" max="0.25" step="0.005" value="0.04" disabled>
+        </label>
+        <label>
+          Intervalo de amostragem
+          <select id="sampleIntervalInput">
+            <option value="0.25">0,25 s</option>
+            <option value="0.5" selected>0,50 s</option>
+            <option value="1">1,00 s</option>
+          </select>
+        </label>
+        <label class="toggle-control">
+          <input id="showPoseOverlayInput" type="checkbox" checked>
+          <span>Exibir esqueleto</span>
+        </label>
+        <button id="analyzeButton" class="button primary" disabled>Analisar pose</button>
+        <button id="removeSuggestionsButton" class="button secondary" disabled>Remover pendentes</button>
+      </div>
+      <p id="poseDependencyNote" class="dependency-note">Na análise por pose, a biblioteca WASM e o modelo são obtidos de fontes públicas do MediaPipe/Google. Os quadros do vídeo não são enviados: a inferência ocorre no navegador.</p>
+      <div id="analysisSummary" class="analysis-summary" hidden></div>
+      <div id="analysisProgress" class="progress-wrap" hidden>
+        <div class="progress-track"><div id="analysisProgressBar" class="progress-bar"></div></div>
+        <span id="analysisProgressText">Preparando análise…</span>
+      </div>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="section-heading">
+        <div>
+          <p class="step">4. Revisão humana</p>
+          <h2>Segmentos anotados</h2>
+        </div>
+        <label class="compact-filter">
+          Exibir
+          <select id="statusFilter">
+            <option value="all">Todos</option>
+            <option value="suggested">Pendentes</option>
+            <option value="accepted">Aceitos</option>
+            <option value="rejected">Rejeitados</option>
+          </select>
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rótulo</th>
+              <th>Início</th>
+              <th>Fim</th>
+              <th>Duração</th>
+              <th>Origem</th>
+              <th>Status</th>
+              <th>Confiança</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="annotationTableBody">
+            <tr><td colspan="8" class="empty-cell">Nenhuma anotação criada.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

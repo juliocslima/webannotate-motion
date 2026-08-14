@@ -1,0 +1,1 @@
+"""WebAnnotate-Motion application package."""
