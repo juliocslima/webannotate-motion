@@ -4,6 +4,16 @@ Ferramenta web **privacy-preserving** e **human-in-the-loop** para anotação te
 
 A versão **0.3.0** acrescenta um segundo analisador baseado em **pose corporal no navegador**, mantendo o detector por diferença de quadros como baseline explicável. O objetivo é permitir comparação experimental entre métodos automáticos e uma referência manual sem enviar o vídeo ao backend.
 
+## Artefato científico e Zenodo
+
+O **WebAnnotate-Motion+ v0.3.0** tem um depósito versionado preparado no **Zenodo**, com o DOI de versão **[10.5281/zenodo.23002986](https://doi.org/10.5281/zenodo.23002986)**. **O DOI foi reservado, mas o registro ainda não está público**; a disponibilidade do artefato deve ser confirmada após a publicação do depósito. Este repositório reúne o código em desenvolvimento, enquanto o depósito no Zenodo destina-se à preservação de uma versão identificável para citação e reprodução científica.
+
+O pacote da versão científica deve incluir o código-fonte correspondente à v0.3.0, a licença MIT, o `README.md`, `requirements.txt`, `Dockerfile`, `docker-compose.yml`, `Makefile`, a amostra sintética em `samples/` e os testes em `tests/`. Os comandos de execução e validação estão documentados abaixo. Para reproduzir a versão citada no artigo, utilize os arquivos efetivamente depositados no Zenodo, em vez de depender de alterações posteriores na branch `main` ou de uma instância pública da aplicação.
+
+**Citação sugerida após a publicação:** *WebAnnotate-Motion+ v0.3.0* (artefato de software), Zenodo, DOI: [10.5281/zenodo.23002986](https://doi.org/10.5281/zenodo.23002986). Consulte o registro publicado para obter a lista definitiva de autores, a data e os metadados de citação.
+
+A execução da aplicação não exige uma instância pública hospedada, mas a operação **totalmente offline não está garantida**: a análise por pose carrega inicialmente dependências Web/WASM e o modelo MediaPipe de fontes externas. A demonstração com a amostra sintética e os testes de software permitem verificar funcionalidades; **não representam um estudo controlado com anotadores nem demonstram ganhos de produtividade**.
+
 ## Funcionalidades
 
 - vídeo local ou amostra sintética;
