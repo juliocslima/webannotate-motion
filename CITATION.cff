@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: >-
+  Se utilizar o WebAnnotate-Motion+ em pesquisa, ensino ou outras atividades,
+  cite esta versao do software pelo DOI informado abaixo.
+type: software
+title: 'WebAnnotate-Motion+: Anotação Temporal Assistida e Orientada à Privacidade de Atividades Humanas em Vídeos na Web'
+version: 0.3.0
+doi: 10.5281/zenodo.23002986
+url: "https://github.com/juliocslima/webannotate-motion"
+repository-code: "https://github.com/juliocslima/webannotate-motion"
+license: MIT
+authors:
+  - given-names: "Júlio César Sousa de"
+    family-names: "Lima"
+  - given-names: "Daniel Henrique"
+    family-names: "Silva"
+  - given-names: "Esther Silva de"
+    family-names: "Magalhães"
+  - given-names: "Luiz Henrique Andrade"
+    family-names: "Correia"
+  - given-names: "André de Lima"
+    family-names: "Salgado"
+  - given-names: "Mayron César de Oliveira"
+    family-names: "Moreira"
+keywords:
+  - video annotation
+  - human activity recognition
+  - temporal action localization
+  - privacy-preserving computing
+  - human-in-the-loop
+  - pose estimation
+  - web applications
